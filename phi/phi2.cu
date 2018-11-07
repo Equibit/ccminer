@@ -97,6 +97,10 @@ extern "C" void phi2_hash(void *output, const void *input)
 #define _DEBUG_PREFIX "phi-"
 #include "cuda_debug.cuh"
 
+// EQB_TODO Fixed for debug. Revisit as time permits.
+#undef TRACE
+#define TRACE(algo) {}
+
 static bool init[MAX_GPUS] = { 0 };
 static bool use_compat_kernels[MAX_GPUS] = { 0 };
 static __thread bool gtx750ti = false;
