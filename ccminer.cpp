@@ -1280,6 +1280,7 @@ static bool get_upstream_work(CURL *curl, struct work *work)
 		return rc;
 	}
 
+#ifdef BUILD_ORIG
 	if (opt_debug_threads)
 		applog(LOG_DEBUG, "%s: want_longpoll=%d have_longpoll=%d",
 			__func__, want_longpoll, have_longpoll);
@@ -1310,6 +1311,10 @@ static bool get_upstream_work(CURL *curl, struct work *work)
 
 	get_mininginfo(curl, work);
 	get_blocktemplate(curl, work);
+#else
+	get_mininginfo(curl, work);
+	rc = get_blocktemplate(curl, work);
+#endif
 
 	return rc;
 }
