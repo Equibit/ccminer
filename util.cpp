@@ -2230,6 +2230,9 @@ void print_hash_tests(void)
 	keccak256_hash(&hash[0], &buf[0]);
 	printpfx("keccak", hash);
 
+	keccak256_hash_test(&hash[0], &buf[0]);
+	printpfx("keccak test", hash);
+
 	memset(buf, 0, 128);
 	lbry_hash(&hash[0], &buf[0]);
 	printpfx("lbry", hash);

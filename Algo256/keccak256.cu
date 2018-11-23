@@ -34,8 +34,20 @@ extern "C" void keccak256_hash(void *state, const void *input)
 	sph_keccak_context ctx_keccak;
 
 	sph_keccak256_init(&ctx_keccak);
-	sph_keccak256 (&ctx_keccak, input, 80);
-	sph_keccak256_close(&ctx_keccak, (void*) hash);
+	sph_keccak256(&ctx_keccak, input, 80);
+	sph_keccak256_close(&ctx_keccak, (void*)hash);
+
+	memcpy(state, hash, 32);
+}
+
+extern "C" void keccak256_hash_test(void *state, const void *input)
+{
+	uint32_t _ALIGN(64) hash[16];
+	sph_keccak_context ctx_keccak;
+
+	sph_keccak256_init(&ctx_keccak);
+	sph_keccak256(&ctx_keccak, input, 0);
+	sph_keccak256_close(&ctx_keccak, (void*)hash);
 
 	memcpy(state, hash, 32);
 }
@@ -85,7 +97,7 @@ extern "C" int scanhash_keccak256(int thr_id, struct work* work, uint32_t max_no
 
 		init[thr_id] = true;
 	}
-
+	
 	for (int k=0; k < 19; k++) {
 		be32enc(&endiandata[k], pdata[k]);
 	}
@@ -97,16 +109,19 @@ extern "C" int scanhash_keccak256(int thr_id, struct work* work, uint32_t max_no
 		keccak256_setBlock_80((uint64_t*)endiandata);
 		keccak256_setOutput(thr_id);
 	}
-
+	
 	do {
 		int order = 0;
 
 		*hashes_done = pdata[19] - first_nonce + throughput;
 
-		if(use_compat_kernels[thr_id])
+		if (use_compat_kernels[thr_id]) {
 			keccak256_sm3_hash_80(thr_id, throughput, pdata[19], work->nonces, order++);
+			gpulog(LOG_DEBUG, thr_id, "keccak256_sm3_hash_80 order=%d", order);
+		}
 		else {
 			keccak256_cpu_hash_80(thr_id, throughput, pdata[19], work->nonces, highTarget);
+			// gpulog(LOG_DEBUG, thr_id, "keccak256_cpu_hash_80 hightTarget=(%d,%d)", highTarget.x, highTarget.y);
 		}
 
 		if (work->nonces[0] != UINT32_MAX && bench_algo < 0)
@@ -153,7 +168,10 @@ extern "C" int scanhash_keccak256(int thr_id, struct work* work, uint32_t max_no
 	} while (!work_restart[thr_id].restart);
 
 	*hashes_done = pdata[19] - first_nonce;
-	return 0;
+
+	gpulog(LOG_DEBUG, thr_id, "scanhash_keccak256 found nothing");
+
+	return 1; // 0;
 }
 
 // cleanup

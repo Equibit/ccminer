@@ -917,6 +917,7 @@ void heavycoin_hash(unsigned char* output, const unsigned char* input, int len);
 void hmq17hash(void *output, const void *input);
 void hsr_hash(void *output, const void *input);
 void keccak256_hash(void *state, const void *input);
+void keccak256_hash_test(void *state, const void *input);
 void jackpothash(void *state, const void *input);
 void groestlhash(void *state, const void *input);
 void jha_hash(void *output, const void *input);

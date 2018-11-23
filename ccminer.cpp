@@ -1108,12 +1108,16 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 			"{\"method\": \"getwork\", \"params\": [\"%s\"], \"id\":10}\r\n",
 			str);
 
+#ifdef BUILD_ORIG
 		/* issue JSON-RPC request */
 		val = json_rpc_call_pool(curl, pool, s, false, false, NULL);
 		if (unlikely(!val)) {
 			applog(LOG_ERR, "submit_upstream_work json_rpc_call failed");
 			return false;
 		}
+#endif
+
+		applog(LOG_DEBUG, ">> submit_upstream_work share result...");
 
 		res = json_object_get(val, "result");
 		reason = json_object_get(val, "reject-reason");
@@ -1128,6 +1132,8 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 
 		free(str);
 	}
+
+	applog(LOG_DEBUG, ">> submit_upstream_work done");
 
 	return true;
 }
@@ -1399,7 +1405,7 @@ static bool workio_submit_work(struct workio_cmd *wc, CURL *curl)
 {
 	int failures = 0;
 	uint32_t pooln = wc->pooln;
-	// applog(LOG_DEBUG, "%s: pool %d", __func__, wc->pooln);
+	applog(LOG_DEBUG, "%s: pool %d", __func__, wc->pooln);
 
 	/* submit solution to bitcoin via JSON-RPC */
 	while (!submit_upstream_work(curl, wc->u.work)) {
@@ -1447,11 +1453,13 @@ static void *workio_thread(void *userdata)
 		switch (wc->cmd) {
 		case WC_GET_WORK:
 			ok = workio_get_work(wc, curl);
+			applog(LOG_DEBUG, ">> WC_GET_WORK %d", ok);
 			break;
 		case WC_SUBMIT_WORK:
 			if (opt_led_mode == LED_MODE_SHARES)
 				gpu_led_on(device_map[wc->thr->id]);
 			ok = workio_submit_work(wc, curl);
+			applog(LOG_DEBUG, ">> WC_SUBMIT_WORK %d", ok);
 			if (opt_led_mode == LED_MODE_SHARES)
 				gpu_led_off(device_map[wc->thr->id]);
 			break;
@@ -2438,6 +2446,7 @@ static void *miner_thread(void *userdata)
 		case ALGO_KECCAK:
 		case ALGO_KECCAKC:
 			rc = scanhash_keccak256(thr_id, &work, max_nonce, &hashes_done);
+			applog(LOG_DEBUG, ">> keccak hashes_done %d %d", rc, hashes_done);
 			break;
 
 		case ALGO_JACKPOT:
@@ -2581,6 +2590,8 @@ static void *miner_thread(void *userdata)
 			/* should never happen */
 			goto out;
 		}
+
+		applog(LOG_DEBUG, ">>>>>>>>>>>>>>>>> %d hashes_done %d %d", opt_algo, rc, hashes_done);
 
 		if (opt_led_mode == LED_MODE_MINING)
 			gpu_led_off(dev_id);
